@@ -8,32 +8,31 @@ load_dotenv(".env")
 
 
 def get_quotes(page_url):
-    results = []  # List to store all quotes data
+    results = []
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-            # proxy={"server": proxy}
-        )
+
+        browser = p.chromium.launch()
         context = browser.new_context()
         page = context.new_page()
         page.goto(page_url, wait_until="domcontentloaded")
-        print(f'visiting {page_url}')
+        print(f'Visiting {page_url}')
+
         page.wait_for_selector("span[class='text']")
         quotes = page.locator(".quote").all()
         next_page_btn_visible = True
 
         while next_page_btn_visible:
-            print("Staring scrapping the page...")
+            print("Starting scrapping the page...")
             next_page_btn_selector = page.locator("a[href^='/js-delayed/page/']", has_text="Next ")
             for i, elem in enumerate(quotes):
                 quote_data = {}
                 text = page.locator(".text").nth(i).text_content()
-                text = text.strip('“').strip('”')  # Removing the leading and trailing double quotes
+                text = text.strip('“').strip('”')
                 quote_data["text"] = text
                 by = page.locator(".author").nth(i).text_content()
                 quote_data["by"] = by
 
-                # Splitting the tags into a list
                 tags_string = page.locator(".tags").nth(i).inner_text()
                 tags = tags_string.replace("Tags: ", "").split()
                 quote_data["tags"] = tags
@@ -48,12 +47,10 @@ def get_quotes(page_url):
 
         browser.close()
 
-    # Write the results to output.json
     with open("output.json", "w") as f:
         json.dump(results, f, indent=4)
 
 
 if __name__ == "__main__":
     url = os.environ.get("INPUT_URL")
-    # proxy_server = os.environ.get("PROXY")
     get_quotes(url)
